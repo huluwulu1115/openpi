@@ -16,24 +16,9 @@ import os
 from pathlib import Path
 
 
-def _find_openpi_repo_root(start: Path) -> Path | None:
-    """Best-effort search for the OpenPI repo root (directory containing pyproject.toml)."""
-    for p in (start, *start.parents):
-        pyproject = p / "pyproject.toml"
-        if not pyproject.exists():
-            continue
-        try:
-            txt = pyproject.read_text()
-        except OSError:
-            continue
-        # Lightweight check: avoid toml parsing at import time.
-        if 'name = "openpi"' in txt or 'name="openpi"' in txt:
-            return p
-    return None
-
-
 if "HF_LEROBOT_HOME" not in os.environ:
-    repo_root = _find_openpi_repo_root(Path(__file__).resolve())
-    if repo_root is not None:
-        os.environ["HF_LEROBOT_HOME"] = str(repo_root / "lerobot_datasets")
+    # This file lives at: <openpi repo>/src/openpi/__init__.py
+    # So the repo root is always two parents up from the package dir.
+    repo_root = Path(__file__).resolve().parents[2]
+    os.environ["HF_LEROBOT_HOME"] = str(repo_root / "lerobot_datasets")
 
