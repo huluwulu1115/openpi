@@ -21,7 +21,6 @@ from pathlib import Path
 import shutil
 
 import cv2
-from lerobot.common.datasets.lerobot_dataset import HF_LEROBOT_HOME
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 import numpy as np
 from tqdm import tqdm
@@ -40,6 +39,12 @@ def main() -> None:
     parser.add_argument("--data_dir", type=str, required=True, help="Collector output directory (contains meta.json).")
     parser.add_argument("--repo_id", type=str, required=True, help="Output LeRobot dataset repo_id.")
     parser.add_argument("--fps", type=int, default=None, help="Override dataset FPS (default: inferred from meta.json).")
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Base directory where the LeRobot dataset will be written (default: <openpi repo>/lerobot_datasets).",
+    )
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -57,16 +62,23 @@ def main() -> None:
     if not episode_dirs:
         raise ValueError(f"No episodes found under {episodes_root}")
 
+    # Default output under the current OpenPI repo checkout:
+    #   openpi/lerobot_datasets/<repo_id>/
+    openpi_root = Path(__file__).resolve().parents[2]
+    output_base = Path(args.output_dir) if args.output_dir is not None else (openpi_root / "lerobot_datasets")
+    dataset_root = output_base / args.repo_id
+
     # Clean up any existing dataset in the output directory
-    output_path = HF_LEROBOT_HOME / args.repo_id
-    if output_path.exists():
-        shutil.rmtree(output_path)
+    if dataset_root.exists():
+        shutil.rmtree(dataset_root)
+    dataset_root.parent.mkdir(parents=True, exist_ok=True)
 
     # Create LeRobot dataset, define features to store (DROID naming conventions)
     dataset = LeRobotDataset.create(
         repo_id=args.repo_id,
         robot_type="panda",
         fps=fps,
+        root=dataset_root,
         features={
             "exterior_image_1_left": {
                 "dtype": "image",
@@ -145,7 +157,7 @@ def main() -> None:
         dataset.save_episode()
 
     print(f"[DONE] Wrote LeRobot dataset: {args.repo_id}")
-    print(f"       Location: {output_path}")
+    print(f"       Location: {dataset_root}")
     print(f"       Episodes: {len(episode_dirs)}")
     print(f"       FPS: {fps}")
 
