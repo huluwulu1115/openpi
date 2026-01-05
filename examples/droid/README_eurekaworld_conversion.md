@@ -20,8 +20,8 @@ uv run examples/droid/convert_eurekaworld_sim_dataset_to_lerobot.py \
 # Output:
 #   ./lerobot_datasets/<repo_id>
 
-# If you want OpenPI training to find the dataset by repo_id, use:
-#   export HF_LEROBOT_HOME=./lerobot_datasets
+# Note: OpenPI defaults `HF_LEROBOT_HOME` to `./lerobot_datasets` at import time
+# (unless you already set it), so training scripts will find this dataset by repo_id.
 
 # Optional: write the dataset somewhere else
 uv run examples/droid/convert_eurekaworld_sim_dataset_to_lerobot.py \
